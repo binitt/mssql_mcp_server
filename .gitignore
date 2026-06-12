@@ -80,3 +80,4 @@ mcp-workspace/
 
 # Claude local settings
 .claude/
+*.code-workspace

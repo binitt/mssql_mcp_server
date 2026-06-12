@@ -9,7 +9,7 @@ A Model Context Protocol (MCP) server for secure SQL Server database access thro
 ## Features
 
 - List database tables as MCP resources
-- **`query`** tool for read-only SQL (Cursor Ask mode); **`execute_sql`** when writes are enabled
+- **`read_query`** tool for read-only SQL (Cursor Ask mode); **`execute_sql`** when writes are enabled
 - Multiple authentication methods (SQL, Windows, Azure AD)
 - LocalDB and Azure SQL support
 - Custom port configuration
@@ -77,7 +77,7 @@ Cursor opens `mcp.json` for editing. Use a global config at `~/.cursor/mcp.json`
         "MSSQL_USER": "your_readonly_user",
         "MSSQL_PASSWORD": "your-password"
       },
-      "alwaysAllow": ["query"]
+      "alwaysAllow": ["read_query"]
     },
     "mssql_write": {
       "command": "/path/to/.venv/Scripts/python.exe",
@@ -95,7 +95,7 @@ Cursor opens `mcp.json` for editing. Use a global config at `~/.cursor/mcp.json`
 }
 ```
 
-- **`mssql_readonly`** — Ask mode and Agent read queries; tool name **`query`**.
+- **`mssql_readonly`** — Ask mode and Agent read queries; tool name **`read_query`**.
 - **`mssql_write`** — Agent write queries only; tool name **`execute_sql`**; disable when not needed.
 
 On Windows, use forward slashes in `command` (e.g. `C:/tools/mcp/.venv/Scripts/python.exe`).
@@ -124,11 +124,11 @@ Use the login in the `mssql_readonly` entry in `mcp.json`. Use strong, unique pa
 
 ## Read-only vs write mode
 
-By default the MCP server exposes a **`query`** tool (read-only): only `SELECT` / `WITH` (CTE) queries are accepted, and the tool is annotated with `readOnlyHint` so Cursor **Ask mode** can use it. With `MSSQL_ALLOW_WRITES=1`, the tool is named **`execute_sql`** and accepts all SQL.
+By default the MCP server exposes a **`read_query`** tool (read-only): only `SELECT` / `WITH` (CTE) queries are accepted, and the tool is annotated with `readOnlyHint` so Cursor **Ask mode** can use it. With `MSSQL_ALLOW_WRITES=1`, the tool is named **`execute_sql`** and accepts all SQL.
 
 | Variable | Default | Tool name | Effect |
 |----------|---------|-----------|--------|
-| `MSSQL_ALLOW_WRITES` | unset / `false` | `query` | SELECT-only; `readOnlyHint: true` (Ask mode) |
+| `MSSQL_ALLOW_WRITES` | unset / `false` | `read_query` | SELECT-only; `readOnlyHint: true` (Ask mode) |
 | `MSSQL_ALLOW_WRITES=1` | — | `execute_sql` | All SQL allowed; no read-only hint (Agent mode) |
 
 Use a read-only SQL login for the default entry and a write-capable login when enabling writes.
@@ -168,7 +168,7 @@ MSSQL_PASSWORD=your-password
 MSSQL_PORT=1433                 # Custom port (default: 1433)
 MSSQL_ENCRYPT=true              # Force encryption (non-Azure)
 MSSQL_ALLOW_WRITES=1            # Allow INSERT/UPDATE/DELETE; exposes execute_sql tool
-MSSQL_COMMAND=query             # Override default tool name (optional)
+MSSQL_COMMAND=read_query        # Override default tool name (optional)
 ```
 
 ## Development

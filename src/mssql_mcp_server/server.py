@@ -95,11 +95,11 @@ def get_db_config():
     return config
 
 def get_command():
-    """Get the MCP tool name (query for read-only, execute_sql for write mode)."""
+    """Get the MCP tool name (read_query for read-only, execute_sql for write mode)."""
     override = os.getenv("MSSQL_COMMAND")
     if override:
         return override
-    return "execute_sql" if allow_writes() else "query"
+    return "execute_sql" if allow_writes() else "read_query"
 
 def allow_writes() -> bool:
     """Whether non-SELECT statements are permitted (default: read-only)."""

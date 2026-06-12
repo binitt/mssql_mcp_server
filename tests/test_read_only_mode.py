@@ -37,7 +37,7 @@ class TestListToolsAnnotations:
     async def test_read_only_mode_has_annotation(self):
         with patch.dict(os.environ, {}, clear=True):
             tools = await list_tools()
-            assert tools[0].name == "query"
+            assert tools[0].name == "read_query"
             assert tools[0].annotations is not None
             assert tools[0].annotations.readOnlyHint is True
             assert "read-only" in tools[0].description.lower()
@@ -54,7 +54,7 @@ class TestListToolsAnnotations:
 class TestCallToolReadOnlyGate:
     async def test_rejects_insert_in_read_only_mode(self):
         with patch.dict(os.environ, {}, clear=True):
-            result = await call_tool("query", {"query": "INSERT INTO t VALUES (1)"})
+            result = await call_tool("read_query", {"query": "INSERT INTO t VALUES (1)"})
             assert "read-only mode" in result[0].text
 
     async def test_allows_select_without_db(self):
@@ -73,7 +73,7 @@ class TestCallToolReadOnlyGate:
                 mock_conn.cursor.return_value = mock_cursor
                 mock_connect.return_value = mock_conn
 
-                result = await call_tool("query", {"query": "SELECT id FROM t"})
+                result = await call_tool("read_query", {"query": "SELECT id FROM t"})
                 assert "read-only mode" not in result[0].text
                 mock_connect.assert_called_once()
 

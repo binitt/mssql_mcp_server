@@ -14,7 +14,11 @@ A Model Context Protocol (MCP) server for secure SQL Server database access thro
 - LocalDB and Azure SQL support
 - Custom port configuration
 
-## Environment setup
+## Setup in Cursor
+
+Follow these steps in order.
+
+### 1. Environment setup
 
 Install with [uv](https://docs.astral.sh/uv/) from GitHub (recommended over PyPI — the published package lacks these fixes).
 
@@ -50,18 +54,16 @@ uv pip install "git+https://github.com/binitt/mssql_mcp_server.git"
 uv pip install --upgrade "git+https://github.com/binitt/mssql_mcp_server.git"
 ```
 
-## Read-only vs write mode
+### 2. Configure MCP servers (`mcp.json`)
 
-By default the MCP server exposes a **`query`** tool (read-only): only `SELECT` / `WITH` (CTE) queries are accepted, and the tool is annotated with `readOnlyHint` so Cursor **Ask mode** can use it. With `MSSQL_ALLOW_WRITES=1`, the tool is named **`execute_sql`** and accepts all SQL.
+**Open the configuration in Cursor:**
 
-| Variable | Default | Tool name | Effect |
-|----------|---------|-----------|--------|
-| `MSSQL_ALLOW_WRITES` | unset / `false` | `query` | SELECT-only; `readOnlyHint: true` (Ask mode) |
-| `MSSQL_ALLOW_WRITES=1` | — | `execute_sql` | All SQL allowed; no read-only hint (Agent mode) |
+1. Press **Ctrl+Shift+P** (Windows/Linux) or **Cmd+Shift+P** (macOS) to open the Command Palette.
+2. Type **MCP** and select **MCP: Open MCP Settings** (also listed as **View: Open MCP Settings**).
 
-Use a read-only SQL login for the default entry and a write-capable login when enabling writes. Restart the MCP server in Cursor after changing env vars.
+Cursor opens `mcp.json` for editing. Use a global config at `~/.cursor/mcp.json` (all projects) or a project config at `.cursor/mcp.json` in your repo.
 
-**Cursor `mcp.json` — two entries (recommended):**
+**Recommended — two entries (read-only + optional write):**
 
 ```json
 {
@@ -93,12 +95,14 @@ Use a read-only SQL login for the default entry and a write-capable login when e
 }
 ```
 
-- **`mssql_readonly`** — Ask mode and Agent read queries; tool name **`query`** (`your_readonly_user`).
+- **`mssql_readonly`** — Ask mode and Agent read queries; tool name **`query`**.
 - **`mssql_write`** — Agent write queries only; tool name **`execute_sql`**; disable when not needed.
 
 On Windows, use forward slashes in `command` (e.g. `C:/tools/mcp/.venv/Scripts/python.exe`).
 
-## Creating a read-only SQL user for MCP
+Save the file and restart the MCP server in Cursor (or reload the window) after changing env vars.
+
+### 3. Create a read-only SQL user
 
 Use a dedicated login with `db_datareader` only on the target database. Run in SQL Server Management Studio or `sqlcmd` as a user who can create logins and users.
 
@@ -116,7 +120,18 @@ ALTER ROLE db_datareader ADD MEMBER your_readonly_user;
 GO
 ```
 
-Use strong, unique passwords and never commit real credentials to version control.
+Use the login in the `mssql_readonly` entry in `mcp.json`. Use strong, unique passwords and never commit real credentials to version control.
+
+## Read-only vs write mode
+
+By default the MCP server exposes a **`query`** tool (read-only): only `SELECT` / `WITH` (CTE) queries are accepted, and the tool is annotated with `readOnlyHint` so Cursor **Ask mode** can use it. With `MSSQL_ALLOW_WRITES=1`, the tool is named **`execute_sql`** and accepts all SQL.
+
+| Variable | Default | Tool name | Effect |
+|----------|---------|-----------|--------|
+| `MSSQL_ALLOW_WRITES` | unset / `false` | `query` | SELECT-only; `readOnlyHint: true` (Ask mode) |
+| `MSSQL_ALLOW_WRITES=1` | — | `execute_sql` | All SQL allowed; no read-only hint (Agent mode) |
+
+Use a read-only SQL login for the default entry and a write-capable login when enabling writes.
 
 ## Configuration reference
 

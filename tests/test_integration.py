@@ -50,12 +50,12 @@ class TestMCPProtocolIntegration:
                 # Test tool listing
                 tools = await app.list_tools()
                 assert len(tools) == 1
-                assert tools[0].name == "read_query"
+                assert tools[0].name == "query"
                 
                 # Test tool execution
                 mock_cursor.description = [('count',)]
                 mock_cursor.fetchall.return_value = [(42,)]
-                result = await app.call_tool("read_query", {"query": "SELECT COUNT(*) FROM users"})
+                result = await app.call_tool("query", {"sql": "SELECT COUNT(*) FROM users"})
                 
                 assert len(result) == 1
                 assert isinstance(result[0], TextContent)
@@ -166,7 +166,7 @@ class TestDatabaseIntegration:
                 mock_cursor.execute.side_effect = Exception("Query failed")
                 
                 try:
-                    await app.call_tool("read_query", {"query": "SELECT * FROM users"})
+                    await app.call_tool("query", {"sql": "SELECT * FROM users"})
                 except:
                     pass
                 
@@ -212,8 +212,8 @@ class TestEdgeCases:
                 'MSSQL_PASSWORD': 'test',
                 'MSSQL_DATABASE': 'testdb'
             }):
-                result = await app.call_tool("read_query", {
-                    "query": "SELECT * FROM users"
+                result = await app.call_tool("query", {
+                    "sql": "SELECT * FROM users"
                 })
                 
                 # Should handle large results gracefully
@@ -244,8 +244,8 @@ class TestEdgeCases:
                 'MSSQL_PASSWORD': 'test',
                 'MSSQL_DATABASE': 'testdb'
             }):
-                result = await app.call_tool("read_query", {
-                    "query": "SELECT data FROM test_table"
+                result = await app.call_tool("query", {
+                    "sql": "SELECT data FROM test_table"
                 })
                 
                 # Should handle special characters properly

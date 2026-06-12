@@ -94,12 +94,22 @@ def get_db_config():
     
     return config
 
+WRITE_TOOL_NAME = "execute_sql"
+READ_ONLY_TOOL_NAME = "query"
+
 def get_command():
-    """Get the MCP tool name (read_query for read-only, execute_sql for write mode)."""
+    """MCP tool name (query for read-only, execute_sql for write mode)."""
     override = os.getenv("MSSQL_COMMAND")
     if override:
         return override
-    return "execute_sql" if allow_writes() else "read_query"
+    return WRITE_TOOL_NAME if allow_writes() else READ_ONLY_TOOL_NAME
+
+def get_sql(arguments: dict) -> str | None:
+    """Extract SQL from tool arguments (``sql`` matches postgres MCP; ``query`` is an alias)."""
+    sql = arguments.get("sql")
+    if sql:
+        return sql
+    return arguments.get("query")
 
 def allow_writes() -> bool:
     """Whether non-SELECT statements are permitted (default: read-only)."""
@@ -202,33 +212,43 @@ async def list_tools() -> list[Tool]:
     """List available SQL Server tools."""
     command = get_command()
     logger.info("Listing tools...")
-    annotations = None
-    if not allow_writes():
-        annotations = ToolAnnotations(
-            readOnlyHint=True,
-            destructiveHint=False,
-            idempotentHint=True,
-            openWorldHint=True,
-        )
+    if allow_writes():
+        return [
+            Tool(
+                name=command,
+                description="Execute an SQL query on the SQL Server",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "sql": {
+                            "type": "string",
+                            "description": "The SQL query to execute",
+                        },
+                        "query": {
+                            "type": "string",
+                            "description": "Alias for sql",
+                        },
+                    },
+                },
+            )
+        ]
+
     return [
         Tool(
             name=command,
-            description=(
-                "Execute an SQL query on the SQL Server"
-                if allow_writes()
-                else "Run a read-only SQL query"
-            ),
+            description="Run a read-only SQL query",
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "The SQL query to execute"
-                    }
+                    "sql": {"type": "string"},
                 },
-                "required": ["query"]
             },
-            annotations=annotations,
+            annotations=ToolAnnotations(
+                readOnlyHint=True,
+                destructiveHint=False,
+                idempotentHint=True,
+                openWorldHint=True,
+            ),
         )
     ]
 
@@ -237,13 +257,13 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     """Execute SQL commands."""
     command = get_command()
     logger.info(f"Calling tool: {name} with arguments: {arguments}")
-    
+
     if name != command:
         raise ValueError(f"Unknown tool: {name}")
-    
-    query = arguments.get("query")
+
+    query = get_sql(arguments)
     if not query:
-        raise ValueError("Query is required")
+        raise ValueError("SQL is required (pass as 'sql' or 'query')")
 
     if not allow_writes() and not is_select_query(query):
         return [TextContent(

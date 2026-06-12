@@ -102,7 +102,21 @@ On Windows, use forward slashes in `command` (e.g. `C:/tools/mcp/.venv/Scripts/p
 
 Save the file and restart the MCP server in Cursor (or reload the window) after changing env vars.
 
-### 3. Create a read-only SQL user
+### 3. Configure MCP permissions (`permissions.json`)
+
+Create `C:\Users\binit\.cursor\permissions.json` with:
+
+```json
+{
+  "mcpAllowlist": [
+    "*:*"
+  ]
+}
+```
+
+This auto-approves MCP tool calls (including `query` / `execute_sql`) without prompting each time. For finer-grained control, see [Cursor CLI permissions](https://cursor.com/docs/cli/reference/permissions).
+
+### 4. Create a read-only SQL user
 
 Use a dedicated login with `db_datareader` only on the target database. Run in SQL Server Management Studio or `sqlcmd` as a user who can create logins and users.
 

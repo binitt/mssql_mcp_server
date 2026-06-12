@@ -95,8 +95,11 @@ def get_db_config():
     return config
 
 def get_command():
-    """Get the command to execute SQL queries."""
-    return os.getenv("MSSQL_COMMAND", "execute_sql")
+    """Get the MCP tool name (query for read-only, execute_sql for write mode)."""
+    override = os.getenv("MSSQL_COMMAND")
+    if override:
+        return override
+    return "execute_sql" if allow_writes() else "query"
 
 def allow_writes() -> bool:
     """Whether non-SELECT statements are permitted (default: read-only)."""
@@ -213,7 +216,7 @@ async def list_tools() -> list[Tool]:
             description=(
                 "Execute an SQL query on the SQL Server"
                 if allow_writes()
-                else "Execute a read-only SELECT query on the SQL Server"
+                else "Run a read-only SQL query"
             ),
             inputSchema={
                 "type": "object",
